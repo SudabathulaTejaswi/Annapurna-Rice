@@ -9,6 +9,7 @@ import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
+import { BeatLoader } from 'react-spinners';
 
 /* eslint-disable react-hooks/rules-of-hooks */
 SwiperCore.use([Navigation, Pagination, Autoplay]);
@@ -192,7 +193,7 @@ const filteredProducts = products.filter((p) => {
       {/* Product Grid */}
       <div className="row g-3 g-sm-4">
         {filteredProducts.length === 0 ? (
-          <div className="text-center fw-bold mt-4">No products found.</div>
+          <div className="text-center fw-bold mt-4"><BeatLoader /></div>
         ) : (
           filteredProducts.map((product) => (
             <div className="col-6 col-sm-4 col-md-3 col-lg-2" key={product._id}>
