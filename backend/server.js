@@ -14,7 +14,12 @@ import cartRoutes from './routes/cartRoutes.js';
 dotenv.config();
 const app = express();
 
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173'];
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://annapurna-frontend.onrender.com'
+];
+
 
 app.use(cors({
   origin: function(origin, callback) {
