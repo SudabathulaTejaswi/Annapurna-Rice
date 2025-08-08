@@ -1,0 +1,23 @@
+.footer-container {
+  background-color: #111;
+  color: #eee;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.footer-logo {
+  width: 300px;
+  height: 300px;
+  object-fit: contain;
+}
+
+.footer-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #ffc107;
+}
+
+.footer-map iframe {
+  width: 100%;
+  display: block;
+  margin-top: 20px;
+}
