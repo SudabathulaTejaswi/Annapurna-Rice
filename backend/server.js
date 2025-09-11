@@ -17,7 +17,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://annapurna-frontend.onrender.com'
+  'https://annapurna-frontend.onrender.com',
   'https://annapurna-rice.vercel.app'
 ];
 
