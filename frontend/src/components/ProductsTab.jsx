@@ -82,7 +82,7 @@ const ProductsTab = () => {
   const handleDelete = async (id) => {
     const token = localStorage.getItem('adminToken');
     try {
-      await axios.delete(`${baseUrl}/api/products/${id}`, {
+      await axios.delete(`${baseUrl}api/products/${id}`, {
         headers: { Authorization: token },
       });
       fetchProducts();
