@@ -11,7 +11,7 @@ const Footer = () => {
       <img src={logo} alt="Annapurna Logo" className="footer-logo" />
       <div className="text-center text-md-start">
           <h3 className="footer-title ">Annapurna Rice & General Stores</h3>
-          <p className="text-light">Your trusted store for rice, groceries, and essentials in Guntur</p>
+          <p className="text-light">Your trusted store for rice, groceries, and essentials in Vijayawada</p>
         </div>
       </div>
         {/* Footer Content */}
@@ -28,7 +28,7 @@ const Footer = () => {
           <div className="col-md-4 mb-4">
             <h5 className="text-warning mb-3">📍 Address</h5>
             <p><FaMapMarkerAlt className="me-2 text-danger" />
-              Door No 6-128/1 Shop No _3, Near SBI BANK, Near Apparna Towers, Pingalivenkaya Vari Street<br />
+              Door No 6-128/1 Shop No : 3 & 4, Near SBI BANK, Near Apparna Towers, Pingalivenkaya Vari Street<br />
               Ramavarappadu vijayawada, Andhra Pradesh - 520008
             </p>
           </div>
