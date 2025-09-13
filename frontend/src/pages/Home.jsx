@@ -24,8 +24,9 @@ const Home = ({ user, openAuthModal }) => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [loading, setLoading] = useState(true);
 
-
+  // ✅ Fetch products and offers only once
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -35,6 +36,8 @@ const Home = ({ user, openAuthModal }) => {
         setProducts(productsRes.data);
       } catch (error) {
         console.error('API fetch error:', error);
+      } finally {
+        setLoading(false); // stop loader after fetching
       }
     };
     fetchData();
@@ -60,30 +63,30 @@ const Home = ({ user, openAuthModal }) => {
     setActiveTab('rice');
   };
 
-const filteredProducts = products.filter((p) => {
-  const storeMatch = p.store?.toLowerCase() === activeTab.toLowerCase();
-  const nameMatch = p.name?.toLowerCase().includes(search.toLowerCase()) ||
-                    p.title?.toLowerCase().includes(search.toLowerCase()) ||
-                    p.description?.toLowerCase().includes(search.toLowerCase());
+  // ✅ Filtering logic
+  const filteredProducts = products.filter((p) => {
+    const storeMatch = p.store?.toLowerCase() === activeTab.toLowerCase();
+    const nameMatch =
+      p.name?.toLowerCase().includes(search.toLowerCase()) ||
+      p.title?.toLowerCase().includes(search.toLowerCase()) ||
+      p.description?.toLowerCase().includes(search.toLowerCase());
 
-  const price = parseFloat(p.discountPrice || p.price || 0);
-  const min = minPrice !== '' ? parseFloat(minPrice) : null;
-  const max = maxPrice !== '' ? parseFloat(maxPrice) : null;
+    const price = parseFloat(p.discountPrice || p.price || 0);
+    const min = minPrice !== '' ? parseFloat(minPrice) : null;
+    const max = maxPrice !== '' ? parseFloat(maxPrice) : null;
 
-  const minMatch = min === null || price >= min;
-  const maxMatch = max === null || price <= max;
+    const minMatch = min === null || price >= min;
+    const maxMatch = max === null || price <= max;
 
-  const typeMatch = !typeFilter ||
-    p.type?.toLowerCase() === typeFilter.toLowerCase() ||
-    p.title?.toLowerCase().includes(typeFilter.toLowerCase()) ||
-    p.name?.toLowerCase().includes(typeFilter.toLowerCase()) ||
-    p.description?.toLowerCase().includes(typeFilter.toLowerCase());
+    const typeMatch =
+      !typeFilter ||
+      p.type?.toLowerCase() === typeFilter.toLowerCase() ||
+      p.title?.toLowerCase().includes(typeFilter.toLowerCase()) ||
+      p.name?.toLowerCase().includes(typeFilter.toLowerCase()) ||
+      p.description?.toLowerCase().includes(typeFilter.toLowerCase());
 
-  return storeMatch && nameMatch && minMatch && maxMatch && typeMatch;
-});
-
-
-
+    return storeMatch && nameMatch && minMatch && maxMatch && typeMatch;
+  });
 
   return (
     <div className="container-fluid px-3 px-sm-4 my-4">
@@ -140,21 +143,20 @@ const filteredProducts = products.filter((p) => {
               />
             </div>
             <div className="col-md-4">
-            {activeTab === 'rice' && (
-              <select
-                className="form-select"
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <option value="">All Types</option>
-                <option value="Biryani Rice">Biryani Rice</option>
-                <option value="Raw Rice">Raw Rice</option>
-                <option value="Steamed Rice">Steamed Rice</option>
-                <option value="Brown Rice">Brown Rice</option>
-              </select>
-            )}
-          </div>
-
+              {activeTab === 'rice' && (
+                <select
+                  className="form-select"
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                >
+                  <option value="">All Types</option>
+                  <option value="Biryani Rice">Biryani Rice</option>
+                  <option value="Raw Rice">Raw Rice</option>
+                  <option value="Steamed Rice">Steamed Rice</option>
+                  <option value="Brown Rice">Brown Rice</option>
+                </select>
+              )}
+            </div>
 
             <div className="col-md-4">
               <button
@@ -192,12 +194,24 @@ const filteredProducts = products.filter((p) => {
 
       {/* Product Grid */}
       <div className="row g-3 g-sm-4">
-        {filteredProducts.length === 0 ? (
-          <div className="text-center fw-bold mt-4"><BeatLoader /></div>
+        {loading ? (
+          <div className="text-center fw-bold mt-4">
+            <BeatLoader />
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center fw-bold mt-4 text-muted">
+            <i className="bi bi-box-seam"></i> No products found
+          </div>
         ) : (
           filteredProducts.map((product) => (
-            <div className="col-6 col-sm-4 col-md-3 col-lg-2" key={product._id}>
-              <ProductCard product={product} onAdd={() => handleAddToCart(product)} />
+            <div
+              className="col-6 col-sm-4 col-md-3 col-lg-2"
+              key={product._id}
+            >
+              <ProductCard
+                product={product}
+                onAdd={() => handleAddToCart(product)}
+              />
             </div>
           ))
         )}
