@@ -3,7 +3,6 @@ import axios from 'axios';
 import './ProductsTab.css';
 import baseUrl from '../../config';
 
-
 // admin products management component
 const ProductsTab = () => {
   const [products, setProducts] = useState([]);
@@ -50,13 +49,16 @@ const ProductsTab = () => {
     const token = localStorage.getItem('adminToken');
     try {
       if (editingId) {
+        if (!window.confirm("Are you sure you want to update this product?")) return;
         await axios.put(`${baseUrl}api/products/${editingId}`, form, {
           headers: { Authorization: token },
         });
+        alert("Product updated successfully ✅");
       } else {
         await axios.post(`${baseUrl}api/products`, form, {
           headers: { Authorization: token },
         });
+        alert("Product added successfully ✅");
       }
       setForm({ name: '', description: '', price: '', store: 'rice', image: '' });
       setEditingId(null);
@@ -64,6 +66,7 @@ const ProductsTab = () => {
       fetchProducts();
     } catch (err) {
       console.error('Error saving product:', err);
+      alert("❌ Failed to save product. Please try again.");
     }
   };
 
@@ -82,12 +85,15 @@ const ProductsTab = () => {
   const handleDelete = async (id) => {
     const token = localStorage.getItem('adminToken');
     try {
+      if (!window.confirm("⚠️ Are you sure you want to delete this product? This action cannot be undone.")) return;
       await axios.delete(`${baseUrl}api/products/${id}`, {
         headers: { Authorization: token },
       });
+      alert("Product deleted successfully 🗑️");
       fetchProducts();
     } catch (err) {
       console.error('Error deleting product:', err);
+      alert("❌ Failed to delete product. Please try again.");
     }
   };
 
