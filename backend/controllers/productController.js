@@ -1,16 +1,15 @@
-// backend/controllers/productController.js
-
 import Product from '../models/Product.js';
 
 // CREATE product
 export const createProduct = async (req, res) => {
   try {
-    const { name, description, price, store, image } = req.body;
+    const { name, description, price, quantities, store, image } = req.body;
 
     const product = new Product({
       name,
       description,
-      price,
+      price,          // still supported
+      quantities,     // NEW FIELD
       store,
     });
 
@@ -42,14 +41,15 @@ export const getAllProducts = async (req, res) => {
         _id: product._id,
         name: product.name,
         description: product.description,
-        price: product.price,
+        price: product.price,           // kept
+        quantities: product.quantities, // NEW
         store: product.store,
       };
 
       if (product.image?.data) {
         formatted.image = {
           contentType: product.image.contentType,
-          data: product.image.data.toString('base64'), // convert buffer to base64
+          data: product.image.data.toString('base64'),
         };
       } else {
         formatted.image = null;
@@ -68,8 +68,15 @@ export const getAllProducts = async (req, res) => {
 // UPDATE product
 export const updateProduct = async (req, res) => {
   try {
-    const { name, description, price, store, image } = req.body;
-    const updateData = { name, description, price, store };
+    const { name, description, price, quantities, store, image } = req.body;
+
+    const updateData = {
+      name,
+      description,
+      price,       // still supported
+      quantities,  // NEW
+      store,
+    };
 
     if (image) {
       const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
