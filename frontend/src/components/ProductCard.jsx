@@ -1,11 +1,12 @@
-import React, { useContext } from 'react';
+import React, { useContext, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ProductCard.css';
 import { FaCartPlus, FaTrashAlt, FaPlus, FaMinus } from 'react-icons/fa';
 import { CartContext } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext'; 
 
-const ProductCard = ({ product, onAdd }) => {
+// ✅ memoized to prevent unnecessary re-renders
+const ProductCard = memo(({ product, onAdd }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { cartItems, addToCart, removeOneFromCart, removeItemCompletely } = useContext(CartContext);
@@ -38,6 +39,7 @@ const ProductCard = ({ product, onAdd }) => {
             src={imageSrc}
             alt={product.name}
             className="card-img-top product-image"
+            loading="lazy" // ✅ lazy load for faster render
           />
         )}
 
@@ -87,6 +89,6 @@ const ProductCard = ({ product, onAdd }) => {
       )}
     </div>
   );
-};
+});
 
 export default ProductCard;
