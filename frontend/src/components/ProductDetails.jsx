@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom'; // ✅ Added useNavigate
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { CartContext } from '../context/CartContext';
 import { FaCartPlus, FaArrowLeft } from 'react-icons/fa';
@@ -7,12 +7,13 @@ import { FaCartPlus, FaArrowLeft } from 'react-icons/fa';
 const ProductDetails = () => {
   const { id } = useParams();
   const location = useLocation();
-  const navigate = useNavigate(); // ✅ Initialize navigate
+  const navigate = useNavigate();
   const { product: stateProduct } = location.state || {};
   const { addToCart } = useContext(CartContext);
   const [product, setProduct] = useState(null);
 
   useEffect(() => {
+    // ✅ use cached product from navigation state if available
     if (stateProduct) {
       setProduct(stateProduct);
     } else {
@@ -24,23 +25,13 @@ const ProductDetails = () => {
 
   if (!product) return <div className="text-center my-5">Loading product details...</div>;
 
-  const {
-    name,
-    description,
-    price,
-    discountPrice,
-    type,
-    unit,
-    image
-  } = product;
-
+  const { name, description, price, discountPrice, type, unit, image } = product;
   const imageSrc = image?.data
     ? `data:${image.contentType};base64,${image.data}`
     : image;
 
   return (
     <div className="container my-5">
-      {/* ✅ Back Button */}
       <button className="btn btn-outline-secondary mb-4" onClick={() => navigate(-1)}>
         <FaArrowLeft className="me-2" />
         Back
@@ -48,13 +39,17 @@ const ProductDetails = () => {
 
       <div className="row g-4 text-center">
         <div className="col-md-6 text-center">
-          <img
-            src={imageSrc}
-            alt={name}
-            className="img-fluid rounded shadow"
-            style={{ maxHeight: '400px', objectFit: 'contain' }}
-          />
+          {imageSrc && (
+            <img
+              src={imageSrc}
+              alt={name}
+              className="img-fluid rounded shadow"
+              style={{ maxHeight: '400px', objectFit: 'contain' }}
+              loading="lazy" // ✅ lazy load image
+            />
+          )}
         </div>
+
         <div className="col-md-6">
           <h2 className="fw-bold">{name}</h2>
           {type && <p className="text-muted mb-1">Type: {type}</p>}
