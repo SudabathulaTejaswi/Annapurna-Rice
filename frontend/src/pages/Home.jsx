@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import API from '../api';
 import OfferCard from '../components/OfferCard';
 import ProductCard from '../components/ProductCard';
@@ -11,12 +11,11 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import { BeatLoader } from 'react-spinners';
 
-/* eslint-disable react-hooks/rules-of-hooks */
 SwiperCore.use([Navigation, Pagination, Autoplay]);
-/* eslint-enable react-hooks/rules-of-hooks */
 
 const Home = ({ user, openAuthModal }) => {
   const { addToCart } = useContext(CartContext);
+
   const [offers, setOffers] = useState([]);
   const [products, setProducts] = useState([]);
   const [activeTab, setActiveTab] = useState('rice');
@@ -26,40 +25,47 @@ const Home = ({ user, openAuthModal }) => {
   const [typeFilter, setTypeFilter] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Fetch products and offers only once
+  // Fetch products/offers & cache in localStorage
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const cachedProducts = localStorage.getItem('products');
+        const cachedOffers = localStorage.getItem('offers');
+
+        if (cachedProducts && cachedOffers) {
+          setProducts(JSON.parse(cachedProducts));
+          setOffers(JSON.parse(cachedOffers));
+        }
+
         const offersRes = await API.get('/offers');
         const productsRes = await API.get('/products');
 
-        // Preload images safely
-        offersRes.data.forEach(o => {
-          if (o.image?.data && o.image.contentType) {
-            const img = new Image();
-            img.src = `data:${o.image.contentType};base64,${o.image.data}`;
-          } else if (typeof o.image === 'string') {
-            new Image().src = o.image;
-          }
+        const offersData = Array.isArray(offersRes.data) ? offersRes.data : [];
+        const productsData = Array.isArray(productsRes.data) ? productsRes.data : [];
+
+        setOffers(offersData);
+        setProducts(productsData);
+
+        localStorage.setItem('offers', JSON.stringify(offersData));
+        localStorage.setItem('products', JSON.stringify(productsData));
+
+        // Preload images asynchronously (won't block render)
+        offersData.forEach(o => {
+          if (typeof o.image === 'string') new Image().src = o.image;
+        });
+        productsData.forEach(p => {
+          if (typeof p.image === 'string') new Image().src = p.image;
         });
 
-        productsRes.data.forEach(p => {
-          if (p.image?.data && p.image.contentType) {
-            const img = new Image();
-            img.src = `data:${p.image.contentType};base64,${p.image.data}`;
-          } else if (typeof p.image === 'string') {
-            new Image().src = p.image;
-          }
-        });
-
-        setOffers(offersRes.data);
-        setProducts(productsRes.data);
       } catch (error) {
         console.error('API fetch error:', error);
+        setOffers([]);
+        setProducts([]);
       } finally {
-        setLoading(false); // stop loader after fetching
+        setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
@@ -83,30 +89,31 @@ const Home = ({ user, openAuthModal }) => {
     setActiveTab('rice');
   };
 
-  // Filtering logic
-  const filteredProducts = products.filter((p) => {
-    const storeMatch = p.store?.toLowerCase() === activeTab.toLowerCase();
-    const nameMatch =
-      p.name?.toLowerCase().includes(search.toLowerCase()) ||
-      p.title?.toLowerCase().includes(search.toLowerCase()) ||
-      p.description?.toLowerCase().includes(search.toLowerCase());
+  const filteredProducts = Array.isArray(products)
+    ? products.filter((p) => {
+        const storeMatch = p.store?.toLowerCase() === activeTab.toLowerCase();
+        const nameMatch =
+          p.name?.toLowerCase().includes(search.toLowerCase()) ||
+          p.title?.toLowerCase().includes(search.toLowerCase()) ||
+          p.description?.toLowerCase().includes(search.toLowerCase());
 
-    const price = parseFloat(p.discountPrice || p.price || 0);
-    const min = minPrice !== '' ? parseFloat(minPrice) : null;
-    const max = maxPrice !== '' ? parseFloat(maxPrice) : null;
+        const price = parseFloat(p.discountPrice || p.price || 0);
+        const min = minPrice !== '' ? parseFloat(minPrice) : null;
+        const max = maxPrice !== '' ? parseFloat(maxPrice) : null;
 
-    const minMatch = min === null || price >= min;
-    const maxMatch = max === null || price <= max;
+        const minMatch = min === null || price >= min;
+        const maxMatch = max === null || price <= max;
 
-    const typeMatch =
-      !typeFilter ||
-      p.type?.toLowerCase() === typeFilter.toLowerCase() ||
-      p.title?.toLowerCase().includes(typeFilter.toLowerCase()) ||
-      p.name?.toLowerCase().includes(typeFilter.toLowerCase()) ||
-      p.description?.toLowerCase().includes(typeFilter.toLowerCase());
+        const typeMatch =
+          !typeFilter ||
+          p.type?.toLowerCase() === typeFilter.toLowerCase() ||
+          p.title?.toLowerCase().includes(typeFilter.toLowerCase()) ||
+          p.name?.toLowerCase().includes(typeFilter.toLowerCase()) ||
+          p.description?.toLowerCase().includes(typeFilter.toLowerCase());
 
-    return storeMatch && nameMatch && minMatch && maxMatch && typeMatch;
-  });
+        return storeMatch && nameMatch && minMatch && maxMatch && typeMatch;
+      })
+    : [];
 
   return (
     <div className="container-fluid px-3 px-sm-4 my-4">
@@ -141,7 +148,6 @@ const Home = ({ user, openAuthModal }) => {
             </span>
           </div>
         </div>
-
         <div className="col-md-6">
           <div className="row g-2">
             <div className="col-6 col-md-4">
@@ -177,12 +183,8 @@ const Home = ({ user, openAuthModal }) => {
                 </select>
               )}
             </div>
-
             <div className="col-md-4">
-              <button
-                className="btn btn-outline-secondary w-100"
-                onClick={clearFilters}
-              >
+              <button className="btn btn-outline-secondary w-100" onClick={clearFilters}>
                 Clear Filters
               </button>
             </div>
@@ -224,14 +226,8 @@ const Home = ({ user, openAuthModal }) => {
           </div>
         ) : (
           filteredProducts.map((product) => (
-            <div
-              className="col-6 col-sm-4 col-md-3 col-lg-2"
-              key={product._id}
-            >
-              <ProductCard
-                product={product}
-                onAdd={() => handleAddToCart(product)}
-              />
+            <div className="col-6 col-sm-4 col-md-3 col-lg-2" key={product._id}>
+              <ProductCard product={product} onAdd={() => handleAddToCart(product)} />
             </div>
           ))
         )}
