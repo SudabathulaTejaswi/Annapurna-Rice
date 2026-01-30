@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useContext } from 'react';
-import API from '../api';
+import React, { useState, useContext } from 'react';
 import OfferCard from '../components/OfferCard';
 import ProductCard from '../components/ProductCard';
 import { CartContext } from '../context/CartContext';
+import { useProducts } from '../context/ProductsContext';
+import { useOffers } from '../context/OffersContext';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import SwiperCore from 'swiper';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
@@ -11,37 +12,17 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import { BeatLoader } from 'react-spinners';
 
-/* eslint-disable react-hooks/rules-of-hooks */
 SwiperCore.use([Navigation, Pagination, Autoplay]);
-/* eslint-enable react-hooks/rules-of-hooks */
 
 const Home = ({ user, openAuthModal }) => {
   const { addToCart } = useContext(CartContext);
-  const [offers, setOffers] = useState([]);
-  const [products, setProducts] = useState([]);
+  const { products, loading } = useProducts();
+  const { offers } = useOffers();
   const [activeTab, setActiveTab] = useState('rice');
   const [search, setSearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  // ✅ Fetch products and offers only once
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const offersRes = await API.get('/offers');
-        const productsRes = await API.get('/products');
-        setOffers(offersRes.data);
-        setProducts(productsRes.data);
-      } catch (error) {
-        console.error('API fetch error:', error);
-      } finally {
-        setLoading(false); // stop loader after fetching
-      }
-    };
-    fetchData();
-  }, []);
 
   const handleGrabOffer = (offer) => {
     if (!user) return openAuthModal();
@@ -63,7 +44,6 @@ const Home = ({ user, openAuthModal }) => {
     setActiveTab('rice');
   };
 
-  // ✅ Filtering logic
   const filteredProducts = products.filter((p) => {
     const storeMatch = p.store?.toLowerCase() === activeTab.toLowerCase();
     const nameMatch =
@@ -90,7 +70,6 @@ const Home = ({ user, openAuthModal }) => {
 
   return (
     <div className="container-fluid px-3 px-sm-4 my-4">
-      {/* Offer Swiper */}
       <Swiper
         spaceBetween={30}
         slidesPerView={1}
@@ -105,7 +84,7 @@ const Home = ({ user, openAuthModal }) => {
         ))}
       </Swiper>
 
-      {/* Search + Filters */}
+      {/* Filters */}
       <div className="row align-items-center my-4">
         <div className="col-md-6 mb-3 mb-md-0">
           <div className="input-group">
@@ -121,7 +100,6 @@ const Home = ({ user, openAuthModal }) => {
             </span>
           </div>
         </div>
-
         <div className="col-md-6">
           <div className="row g-2">
             <div className="col-6 col-md-4">
@@ -157,12 +135,8 @@ const Home = ({ user, openAuthModal }) => {
                 </select>
               )}
             </div>
-
             <div className="col-md-4">
-              <button
-                className="btn btn-outline-secondary w-100"
-                onClick={clearFilters}
-              >
+              <button className="btn btn-outline-secondary w-100" onClick={clearFilters}>
                 Clear Filters
               </button>
             </div>
@@ -204,14 +178,8 @@ const Home = ({ user, openAuthModal }) => {
           </div>
         ) : (
           filteredProducts.map((product) => (
-            <div
-              className="col-6 col-sm-4 col-md-3 col-lg-2"
-              key={product._id}
-            >
-              <ProductCard
-                product={product}
-                onAdd={() => handleAddToCart(product)}
-              />
+            <div className="col-6 col-sm-4 col-md-3 col-lg-2" key={product._id}>
+              <ProductCard product={product} onAdd={() => handleAddToCart(product)} />
             </div>
           ))
         )}
