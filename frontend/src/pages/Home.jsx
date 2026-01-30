@@ -11,7 +11,9 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import { BeatLoader } from 'react-spinners';
 
+/* eslint-disable react-hooks/rules-of-hooks */
 SwiperCore.use([Navigation, Pagination, Autoplay]);
+/* eslint-enable react-hooks/rules-of-hooks */
 
 const Home = ({ user, openAuthModal }) => {
   const { addToCart } = useContext(CartContext);
@@ -24,28 +26,40 @@ const Home = ({ user, openAuthModal }) => {
   const [typeFilter, setTypeFilter] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // Fetch products and offers only once
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // ✅ Fetch both in parallel
-        const [offersRes, productsRes] = await Promise.all([
-          API.get('/offers'),
-          API.get('/products')
-        ]);
+        const offersRes = await API.get('/offers');
+        const productsRes = await API.get('/products');
 
-        // Preload images for faster display
-        offersRes.data.forEach(o => o.image && new Image().src = o.image);
-        productsRes.data.forEach(p => p.image && new Image().src = p.image);
+        // Preload images safely
+        offersRes.data.forEach(o => {
+          if (o.image?.data && o.image.contentType) {
+            const img = new Image();
+            img.src = `data:${o.image.contentType};base64,${o.image.data}`;
+          } else if (typeof o.image === 'string') {
+            new Image().src = o.image;
+          }
+        });
+
+        productsRes.data.forEach(p => {
+          if (p.image?.data && p.image.contentType) {
+            const img = new Image();
+            img.src = `data:${p.image.contentType};base64,${p.image.data}`;
+          } else if (typeof p.image === 'string') {
+            new Image().src = p.image;
+          }
+        });
 
         setOffers(offersRes.data);
         setProducts(productsRes.data);
       } catch (error) {
         console.error('API fetch error:', error);
       } finally {
-        setLoading(false);
+        setLoading(false); // stop loader after fetching
       }
     };
-
     fetchData();
   }, []);
 
@@ -69,25 +83,34 @@ const Home = ({ user, openAuthModal }) => {
     setActiveTab('rice');
   };
 
-  const filteredProducts = products.filter(p => {
+  // Filtering logic
+  const filteredProducts = products.filter((p) => {
     const storeMatch = p.store?.toLowerCase() === activeTab.toLowerCase();
-    const nameMatch = p.name?.toLowerCase().includes(search.toLowerCase()) ||
-                      p.title?.toLowerCase().includes(search.toLowerCase()) ||
-                      p.description?.toLowerCase().includes(search.toLowerCase());
+    const nameMatch =
+      p.name?.toLowerCase().includes(search.toLowerCase()) ||
+      p.title?.toLowerCase().includes(search.toLowerCase()) ||
+      p.description?.toLowerCase().includes(search.toLowerCase());
+
     const price = parseFloat(p.discountPrice || p.price || 0);
     const min = minPrice !== '' ? parseFloat(minPrice) : null;
     const max = maxPrice !== '' ? parseFloat(maxPrice) : null;
+
     const minMatch = min === null || price >= min;
     const maxMatch = max === null || price <= max;
-    const typeMatch = !typeFilter || p.type?.toLowerCase() === typeFilter.toLowerCase() ||
-                      p.title?.toLowerCase().includes(typeFilter.toLowerCase()) ||
-                      p.name?.toLowerCase().includes(typeFilter.toLowerCase()) ||
-                      p.description?.toLowerCase().includes(typeFilter.toLowerCase());
+
+    const typeMatch =
+      !typeFilter ||
+      p.type?.toLowerCase() === typeFilter.toLowerCase() ||
+      p.title?.toLowerCase().includes(typeFilter.toLowerCase()) ||
+      p.name?.toLowerCase().includes(typeFilter.toLowerCase()) ||
+      p.description?.toLowerCase().includes(typeFilter.toLowerCase());
+
     return storeMatch && nameMatch && minMatch && maxMatch && typeMatch;
   });
 
   return (
     <div className="container-fluid px-3 px-sm-4 my-4">
+      {/* Offer Swiper */}
       <Swiper
         spaceBetween={30}
         slidesPerView={1}
@@ -95,35 +118,57 @@ const Home = ({ user, openAuthModal }) => {
         pagination={{ clickable: true }}
         autoplay={{ delay: 5000, disableOnInteraction: false }}
       >
-        {offers.map(offer => (
+        {offers.map((offer) => (
           <SwiperSlide key={offer._id}>
             <OfferCard offer={offer} onGrab={() => handleGrabOffer(offer)} />
           </SwiperSlide>
         ))}
       </Swiper>
 
-      {/* Filters */}
+      {/* Search + Filters */}
       <div className="row align-items-center my-4">
         <div className="col-md-6 mb-3 mb-md-0">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search products..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+          <div className="input-group">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search products..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <span className="input-group-text">
+              <i className="bi bi-search"></i>
+            </span>
+          </div>
         </div>
+
         <div className="col-md-6">
           <div className="row g-2">
             <div className="col-6 col-md-4">
-              <input type="number" className="form-control" placeholder="Min Price" value={minPrice} onChange={e => setMinPrice(e.target.value)} />
+              <input
+                type="number"
+                className="form-control"
+                placeholder="Min Price"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+              />
             </div>
             <div className="col-6 col-md-4">
-              <input type="number" className="form-control" placeholder="Max Price" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} />
+              <input
+                type="number"
+                className="form-control"
+                placeholder="Max Price"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+              />
             </div>
             <div className="col-md-4">
               {activeTab === 'rice' && (
-                <select className="form-select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+                <select
+                  className="form-select"
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                >
                   <option value="">All Types</option>
                   <option value="Biryani Rice">Biryani Rice</option>
                   <option value="Raw Rice">Raw Rice</option>
@@ -132,32 +177,64 @@ const Home = ({ user, openAuthModal }) => {
                 </select>
               )}
             </div>
+
             <div className="col-md-4">
-              <button className="btn btn-outline-secondary w-100" onClick={clearFilters}>Clear Filters</button>
+              <button
+                className="btn btn-outline-secondary w-100"
+                onClick={clearFilters}
+              >
+                Clear Filters
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <ul className="nav nav-tabs justify-content-center mb-3">
-        <li className="nav-item">
-          <button className={`nav-link ${activeTab === 'rice' ? 'active' : ''}`} onClick={() => setActiveTab('rice')}>Rice Store</button>
-        </li>
-        <li className="nav-item">
-          <button className={`nav-link ${activeTab === 'grocery' ? 'active' : ''}`} onClick={() => setActiveTab('grocery')}>Grocery Store</button>
-        </li>
-      </ul>
+      <div className="d-flex justify-content-center mt-3 mb-3">
+        <ul className="nav nav-tabs w-auto">
+          <li className="nav-item">
+            <button
+              className={`nav-link ${activeTab === 'rice' ? 'active' : ''}`}
+              onClick={() => setActiveTab('rice')}
+            >
+              Rice Store
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              className={`nav-link ${activeTab === 'grocery' ? 'active' : ''}`}
+              onClick={() => setActiveTab('grocery')}
+            >
+              Grocery Store
+            </button>
+          </li>
+        </ul>
+      </div>
 
-      {/* Products */}
+      {/* Product Grid */}
       <div className="row g-3 g-sm-4">
-        {loading ? <div className="text-center mt-4"><BeatLoader /></div> :
-         filteredProducts.length === 0 ? <div className="text-center mt-4 text-muted">No products found</div> :
-         filteredProducts.map(product => (
-          <div key={product._id} className="col-6 col-sm-4 col-md-3 col-lg-2">
-            <ProductCard product={product} onAdd={() => handleAddToCart(product)} />
+        {loading ? (
+          <div className="text-center fw-bold mt-4">
+            <BeatLoader />
           </div>
-        ))}
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center fw-bold mt-4 text-muted">
+            <i className="bi bi-box-seam"></i> No products found
+          </div>
+        ) : (
+          filteredProducts.map((product) => (
+            <div
+              className="col-6 col-sm-4 col-md-3 col-lg-2"
+              key={product._id}
+            >
+              <ProductCard
+                product={product}
+                onAdd={() => handleAddToCart(product)}
+              />
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
