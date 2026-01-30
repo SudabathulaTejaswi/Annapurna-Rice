@@ -25,20 +25,21 @@ const Home = ({ user, openAuthModal }) => {
   const [typeFilter, setTypeFilter] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Fetch products/offers & cache in localStorage
+  // ✅ Fetch products/offers with cache & async image preload
   useEffect(() => {
-    const fetchData = async () => {
+    const loadFromCache = () => {
+      const cachedProducts = localStorage.getItem('products');
+      const cachedOffers = localStorage.getItem('offers');
+      if (cachedProducts) setProducts(JSON.parse(cachedProducts));
+      if (cachedOffers) setOffers(JSON.parse(cachedOffers));
+    };
+
+    const fetchFromAPI = async () => {
       try {
-        const cachedProducts = localStorage.getItem('products');
-        const cachedOffers = localStorage.getItem('offers');
-
-        if (cachedProducts && cachedOffers) {
-          setProducts(JSON.parse(cachedProducts));
-          setOffers(JSON.parse(cachedOffers));
-        }
-
-        const offersRes = await API.get('/offers');
-        const productsRes = await API.get('/products');
+        const [offersRes, productsRes] = await Promise.all([
+          API.get('/offers'),
+          API.get('/products'),
+        ]);
 
         const offersData = Array.isArray(offersRes.data) ? offersRes.data : [];
         const productsData = Array.isArray(productsRes.data) ? productsRes.data : [];
@@ -49,26 +50,21 @@ const Home = ({ user, openAuthModal }) => {
         localStorage.setItem('offers', JSON.stringify(offersData));
         localStorage.setItem('products', JSON.stringify(productsData));
 
-        // Preload images asynchronously (won't block render)
-        offersData.forEach(o => {
-          if (typeof o.image === 'string') new Image().src = o.image;
-        });
-        productsData.forEach(p => {
-          if (typeof p.image === 'string') new Image().src = p.image;
-        });
+        // Preload images asynchronously
+        offersData.forEach(o => { if (o.image) new Image().src = o.image; });
+        productsData.forEach(p => { if (p.image) new Image().src = p.image; });
 
       } catch (error) {
         console.error('API fetch error:', error);
-        setOffers([]);
-        setProducts([]);
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchData();
+    loadFromCache();   // show cached data instantly
+    fetchFromAPI();    // update in background
+    setLoading(false); // hide spinner quickly
   }, []);
 
+  // ✅ Cart handlers
   const handleGrabOffer = (offer) => {
     if (!user) return openAuthModal();
     addToCart(offer);
@@ -89,8 +85,9 @@ const Home = ({ user, openAuthModal }) => {
     setActiveTab('rice');
   };
 
+  // ✅ Filter products safely
   const filteredProducts = Array.isArray(products)
-    ? products.filter((p) => {
+    ? products.filter(p => {
         const storeMatch = p.store?.toLowerCase() === activeTab.toLowerCase();
         const nameMatch =
           p.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -125,7 +122,7 @@ const Home = ({ user, openAuthModal }) => {
         pagination={{ clickable: true }}
         autoplay={{ delay: 5000, disableOnInteraction: false }}
       >
-        {offers.map((offer) => (
+        {offers.map(offer => (
           <SwiperSlide key={offer._id}>
             <OfferCard offer={offer} onGrab={() => handleGrabOffer(offer)} />
           </SwiperSlide>
@@ -148,6 +145,7 @@ const Home = ({ user, openAuthModal }) => {
             </span>
           </div>
         </div>
+
         <div className="col-md-6">
           <div className="row g-2">
             <div className="col-6 col-md-4">
@@ -216,7 +214,7 @@ const Home = ({ user, openAuthModal }) => {
 
       {/* Product Grid */}
       <div className="row g-3 g-sm-4">
-        {loading ? (
+        {loading && products.length === 0 ? (
           <div className="text-center fw-bold mt-4">
             <BeatLoader />
           </div>
@@ -225,7 +223,7 @@ const Home = ({ user, openAuthModal }) => {
             <i className="bi bi-box-seam"></i> No products found
           </div>
         ) : (
-          filteredProducts.map((product) => (
+          filteredProducts.map(product => (
             <div className="col-6 col-sm-4 col-md-3 col-lg-2" key={product._id}>
               <ProductCard product={product} onAdd={() => handleAddToCart(product)} />
             </div>
