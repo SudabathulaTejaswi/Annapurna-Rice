@@ -27,10 +27,16 @@ const Home = ({ user, openAuthModal }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // ✅ Fetch both in parallel
         const [offersRes, productsRes] = await Promise.all([
           API.get('/offers'),
           API.get('/products')
         ]);
+
+        // Preload images for faster display
+        offersRes.data.forEach(o => o.image && new Image().src = o.image);
+        productsRes.data.forEach(p => p.image && new Image().src = p.image);
+
         setOffers(offersRes.data);
         setProducts(productsRes.data);
       } catch (error) {
@@ -39,6 +45,7 @@ const Home = ({ user, openAuthModal }) => {
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
