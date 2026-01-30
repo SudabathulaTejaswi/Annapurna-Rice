@@ -8,59 +8,52 @@ const CartProvider = ({ children }) => {
   const { user } = useContext(AuthContext);
   const [cartItems, setCartItems] = useState([]);
 
-  // Fetch initial cart items if user is logged in
   useEffect(() => {
-    const fetchCart = async () => {
-      if (user?.id) {
-        try {
-          const res = await axios.get(`${baseUrl}api/cart/${user.id}`);
-          setCartItems(res.data.items || []);
-        } catch (err) {
-          console.error('Error fetching cart:', err);
-        }
-      }
-    };
-    fetchCart();
+    if (!user?.id) return;
+    axios.get(`${baseUrl}api/cart/${user.id}`).then(res => {
+      setCartItems(res.data.items || []);
+    });
   }, [user]);
 
-  const syncCart = async (updatedCart) => {
-    setCartItems(updatedCart);
+  const syncCart = async (updated) => {
+    setCartItems(updated);
     if (user?.id) {
-      try {
-        await axios.post(`${baseUrl}api/cart/${user.id}`, { items: updatedCart });
-      } catch (err) {
-        console.error('Failed to sync cart:', err);
-      }
+      await axios.post(`${baseUrl}api/cart/${user.id}`, { items: updated });
     }
   };
 
   const addToCart = (item) => {
-    const existing = cartItems.find((i) => i._id === item._id);
-    let updatedCart;
+    const existing = cartItems.find(
+      i => i._id === item._id && i.quantityLabel === item.quantityLabel
+    );
+
+    let updated;
     if (existing) {
-      updatedCart = cartItems.map((i) =>
-        i._id === item._id ? { ...i, quantity: i.quantity + (item.quantity || 1) } : i
+      updated = cartItems.map(i =>
+        i._id === item._id && i.quantityLabel === item.quantityLabel
+          ? { ...i, quantity: i.quantity + 1 }
+          : i
       );
     } else {
-      updatedCart = [...cartItems, { ...item, quantity: item.quantity || 1 }];
+      updated = [...cartItems, { ...item, quantity: 1 }];
     }
-    syncCart(updatedCart);
+    syncCart(updated);
   };
 
-  const removeOneFromCart = (id) => {
-    const updatedCart = cartItems
-      .map((i) => (i._id === id ? { ...i, quantity: i.quantity - 1 } : i))
-      .filter((i) => i.quantity > 0);
-    syncCart(updatedCart);
+  const removeOneFromCart = (id, label) => {
+    syncCart(
+      cartItems
+        .map(i =>
+          i._id === id && i.quantityLabel === label
+            ? { ...i, quantity: i.quantity - 1 }
+            : i
+        )
+        .filter(i => i.quantity > 0)
+    );
   };
 
-  const removeItemCompletely = (id) => {
-    const updatedCart = cartItems.filter((i) => i._id !== id);
-    syncCart(updatedCart);
-  };
-
-  const clearCart = () => {
-    syncCart([]);
+  const removeItemCompletely = (id, label) => {
+    syncCart(cartItems.filter(i => !(i._id === id && i.quantityLabel === label)));
   };
 
   return (
@@ -70,7 +63,7 @@ const CartProvider = ({ children }) => {
         addToCart,
         removeOneFromCart,
         removeItemCompletely,
-        clearCart,
+        clearCart: () => syncCart([]),
       }}
     >
       {children}
