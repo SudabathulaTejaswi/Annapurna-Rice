@@ -13,8 +13,6 @@ import UserOrders from './pages/UserOrders';
 import CartPage from './pages/CartPage';
 
 import CartProvider from './context/CartProvider';
-import ProductsProvider from './context/ProductsContext';
-import OffersProvider from './context/OffersContext';
 
 function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -54,63 +52,40 @@ function App() {
   );
 
   return (
-    <ProductsProvider>
-      <OffersProvider>
-        <CartProvider>
-          <Router>
-            <div className="d-flex flex-column min-vh-100">
-              <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <PublicLayout>
-                      <Home
-                        onGrabOffer={openAuthModal}
-                        user={user}
-                        openAuthModal={openAuthModal}
-                      />
-                    </PublicLayout>
-                  }
-                />
-                <Route
-                  path="/product/:id"
-                  element={
-                    <PublicLayout>
-                      <ProductDetails />
-                    </PublicLayout>
-                  }
-                />
-                <Route
-                  path="/orders"
-                  element={
-                    <PublicLayout>
-                      <UserOrders user={user} />
-                    </PublicLayout>
-                  }
-                />
-                <Route
-                  path="/cart"
-                  element={
-                    <PublicLayout>
-                      <CartPage user={user} />
-                    </PublicLayout>
-                  }
-                />
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route
-                  path="/admin/dashboard"
-                  element={
-                    <AdminProtectedRoute>
-                      <AdminDashboard />
-                    </AdminProtectedRoute>
-                  }
-                />
-              </Routes>
-            </div>
-          </Router>
-        </CartProvider>
-      </OffersProvider>
-    </ProductsProvider>
+    <CartProvider>
+      <Router>
+        <div className="d-flex flex-column min-vh-100">
+          <Routes>
+            <Route path="/" element={
+              <PublicLayout>
+                <Home user={user} openAuthModal={openAuthModal} />
+              </PublicLayout>
+            } />
+            <Route path="/product/:id" element={
+              <PublicLayout>
+                <ProductDetails />
+              </PublicLayout>
+            } />
+            <Route path="/orders" element={
+              <PublicLayout>
+                <UserOrders user={user} />
+              </PublicLayout>
+            } />
+            <Route path="/cart" element={
+              <PublicLayout>
+                <CartPage user={user} />
+              </PublicLayout>
+            } />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={
+              <AdminProtectedRoute>
+                <AdminDashboard />
+              </AdminProtectedRoute>
+            } />
+          </Routes>
+        </div>
+      </Router>
+    </CartProvider>
   );
 }
 
