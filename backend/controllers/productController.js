@@ -3,14 +3,14 @@ import Product from '../models/Product.js';
 // CREATE product
 export const createProduct = async (req, res) => {
   try {
-    const { name, description, price, quantities, store, image } = req.body;
+    const { name, description, price, store, image, quantities } = req.body;
 
     const product = new Product({
       name,
       description,
-      price,          // still supported
-      quantities,     // NEW FIELD
+      price,
       store,
+      quantities: Array.isArray(quantities) ? quantities : [],
     });
 
     if (image) {
@@ -41,8 +41,8 @@ export const getAllProducts = async (req, res) => {
         _id: product._id,
         name: product.name,
         description: product.description,
-        price: product.price,           // kept
-        quantities: product.quantities, // NEW
+        price: product.price,          // existing
+        quantities: product.quantities || [], // ✅ NEW
         store: product.store,
       };
 
@@ -68,14 +68,14 @@ export const getAllProducts = async (req, res) => {
 // UPDATE product
 export const updateProduct = async (req, res) => {
   try {
-    const { name, description, price, quantities, store, image } = req.body;
+    const { name, description, price, store, image, quantities } = req.body;
 
     const updateData = {
       name,
       description,
-      price,       // still supported
-      quantities,  // NEW
+      price,
       store,
+      quantities: Array.isArray(quantities) ? quantities : [],
     };
 
     if (image) {
